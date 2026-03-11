@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface AuthorizationUseCase {
 
-    Authorization create(Authorization authorization);
+    Authorization create(String patientDocument, String memberNumber, String planCode, String practiceCode, String correlationId);
 
     Optional<Authorization> findById(UUID authorizationId);
 }
