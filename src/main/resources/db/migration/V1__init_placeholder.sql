@@ -1,0 +1,2 @@
+-- Initial Flyway placeholder migration.
+-- Future schema setup for medical authorizations should start here.
