@@ -7,6 +7,8 @@ public record RabbitProperties(
         boolean enabled,
         String exchange,
         String authorizationCreatedRoutingKey,
-        String authorizationCreatedQueue
+        String authorizationCreatedQueue,
+        String authorizationResultRoutingKey,
+        String authorizationResultQueue
 ) {
 }
