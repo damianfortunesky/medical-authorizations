@@ -12,7 +12,7 @@ It focuses on architecture and production readiness rather than implementing bus
 - Java 17
 - Spring Boot 3
 - Maven
-- SQL Server (JPA + Flyway ready)
+- SQL Server (JPA + Flyway)
 - RabbitMQ (integration-ready placeholders)
 - Spring Boot Actuator
 - Micrometer + Prometheus
@@ -62,19 +62,52 @@ src/main/java/com/damian/medicalauthorization
 
 - Java 17+
 - Maven 3.9+
-- Docker (optional for local stack)
+- SQL Server running locally on `localhost:1433`
+- Docker (for RabbitMQ and optional API container)
 
-### 1) Run with Maven
+### 1) Local SQL Server setup
+
+Create a SQL login/user with the expected credentials and grant schema permissions in `medical_authorizations`:
+
+```sql
+CREATE LOGIN api_user_medauth WITH PASSWORD = 'ApiUserMedAuth123!';
+GO
+
+IF DB_ID('medical_authorizations') IS NULL
+    CREATE DATABASE medical_authorizations;
+GO
+
+USE medical_authorizations;
+GO
+
+CREATE USER api_user_medauth FOR LOGIN api_user_medauth;
+GO
+
+ALTER ROLE db_datareader ADD MEMBER api_user_medauth;
+ALTER ROLE db_datawriter ADD MEMBER api_user_medauth;
+ALTER ROLE db_ddladmin ADD MEMBER api_user_medauth;
+GO
+```
+
+### 2) Run API with Maven (recommended for local development)
 
 ```bash
 export DB_URL='jdbc:sqlserver://localhost:1433;databaseName=medical_authorizations;encrypt=true;trustServerCertificate=true'
-export DB_USERNAME='sa'
-export DB_PASSWORD='YourStrong!Passw0rd'
+export DB_USERNAME='api_user_medauth'
+export DB_PASSWORD='ApiUserMedAuth123!'
 
 mvn spring-boot:run
 ```
 
-### 2) Run with Docker Compose
+### 3) Run RabbitMQ only in Docker
+
+```bash
+docker compose up rabbitmq -d
+```
+
+### 4) Run API + RabbitMQ with Docker Compose
+
+When the API runs in Docker, it uses `host.docker.internal` to connect back to your local SQL Server instance.
 
 ```bash
 docker compose up --build
@@ -116,14 +149,14 @@ Both endpoints are intentionally minimal and suitable as extension points.
 - Consistent error response model via `@ControllerAdvice`
 - Validation via Jakarta Bean Validation
 - Actuator + Prometheus exposure
-- Liveness/readiness health group configuration
+- Liveness/readiness health group configuration (includes DB readiness)
 - Security baseline allowing actuator and Swagger in dev-friendly mode
 
 ## Persistence and Messaging Readiness
 
-- SQL Server datasource configured through environment variables only
-- JPA enabled with explicit SQL Server dialect
-- Flyway configured with initial migration placeholder
+- SQL Server datasource configured through environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`)
+- JPA enabled with explicit SQL Server dialect and `ddl-auto=validate`
+- Flyway enabled with initial authorization table migration
 - RabbitMQ properties and configuration placeholders for future async workflows
 
 ## Testing
