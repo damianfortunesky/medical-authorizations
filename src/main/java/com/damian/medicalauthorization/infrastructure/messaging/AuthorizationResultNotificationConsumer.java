@@ -3,11 +3,14 @@ package com.damian.medicalauthorization.infrastructure.messaging;
 import com.damian.medicalauthorization.shared.logging.CorrelationIdHolder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -16,6 +19,8 @@ import java.util.UUID;
 @Component
 @ConditionalOnProperty(prefix = "app.messaging.rabbit", name = "enabled", havingValue = "true")
 public class AuthorizationResultNotificationConsumer {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthorizationResultNotificationConsumer.class);
 
     private static final Set<String> SUPPORTED_RESULT_EVENTS = Set.of(
             "AuthorizationApproved",
@@ -45,14 +50,25 @@ public class AuthorizationResultNotificationConsumer {
         String resolvedEventType = resolveEventType(eventType);
         String resolvedCorrelationId = resolveCorrelationId(message.correlationId(), correlationIdHeader);
 
+        String resolvedMessageId = resolveMessageId(message, messageId);
+
         try {
             MDC.put(CorrelationIdHolder.CORRELATION_ID_MDC_KEY, resolvedCorrelationId);
             processingService.process(
                     message,
-                    resolveMessageId(message, messageId),
+                    resolvedMessageId,
                     resolvedEventType,
                     resolvedCorrelationId
             );
+        } catch (RuntimeException ex) {
+            logger.warn(
+                    "AuthorizationResult processing failed on attempt {}. correlationId={}, eventId={}",
+                    currentRetryAttempt(),
+                    resolvedCorrelationId,
+                    resolvedMessageId,
+                    ex
+            );
+            throw ex;
         } finally {
             MDC.remove(CorrelationIdHolder.CORRELATION_ID_MDC_KEY);
         }
@@ -89,6 +105,14 @@ public class AuthorizationResultNotificationConsumer {
         }
 
         return eventTypeHeader;
+    }
+
+    private int currentRetryAttempt() {
+        if (RetrySynchronizationManager.getContext() == null) {
+            return 1;
+        }
+
+        return RetrySynchronizationManager.getContext().getRetryCount() + 1;
     }
 
     private String resolveCorrelationId(String payloadCorrelationId, String headerCorrelationId) {
