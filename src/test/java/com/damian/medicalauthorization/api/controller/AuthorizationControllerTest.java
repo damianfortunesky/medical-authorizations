@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -62,6 +63,20 @@ class AuthorizationControllerTest {
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.authorizationId").value(id.toString()))
                 .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+
+    @Test
+    @WithAnonymousUser
+    void shouldReturn405WhenMethodIsNotAllowed() throws Exception {
+        mockMvc.perform(put("/authorizations")
+                        .header("X-Correlation-Id", "corr-405"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.status").value(405))
+                .andExpect(jsonPath("$.error").value("Method Not Allowed"))
+                .andExpect(jsonPath("$.path").value("/authorizations"))
+                .andExpect(jsonPath("$.correlationId").value("corr-405"))
+                .andExpect(jsonPath("$.details[0]").value("HttpRequestMethodNotSupportedException"));
     }
 
     @Test
