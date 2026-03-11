@@ -72,6 +72,8 @@ app:
       exchange: ${RABBITMQ_EXCHANGE:medical.authorization.exchange}
       authorization-created-routing-key: ${RABBITMQ_AUTH_CREATED_KEY:authorization.created}
       authorization-created-queue: ${RABBITMQ_AUTH_CREATED_QUEUE:authorization.created.processing}
+      authorization-result-routing-key: ${RABBITMQ_AUTH_RESULT_KEY:authorization.result}
+      authorization-result-queue: ${RABBITMQ_AUTH_RESULT_QUEUE:authorization.result.notifications}
 
 springdoc:
   swagger-ui:

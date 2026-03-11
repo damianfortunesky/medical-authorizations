@@ -53,11 +53,20 @@ public class OutboxPublisher {
         }
     }
 
+
+    private String resolveRoutingKey(OutboxEvent event) {
+        if ("AuthorizationCreated".equals(event.getEventType())) {
+            return rabbitProperties.authorizationCreatedRoutingKey();
+        }
+
+        return rabbitProperties.authorizationResultRoutingKey();
+    }
+
     private void publishSingleEvent(OutboxEvent event) {
         try {
             rabbitTemplate.convertAndSend(
                     rabbitProperties.exchange(),
-                    rabbitProperties.authorizationCreatedRoutingKey(),
+                    resolveRoutingKey(event),
                     event.getPayloadJson(),
                     message -> {
                         MessageProperties properties = message.getMessageProperties();

@@ -37,4 +37,24 @@ public class RabbitConfiguration {
                 .to(authorizationExchange)
                 .with(rabbitProperties.authorizationCreatedRoutingKey());
     }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "app.messaging.rabbit", name = "enabled", havingValue = "true")
+    Queue authorizationResultQueue(RabbitProperties rabbitProperties) {
+        return new Queue(rabbitProperties.authorizationResultQueue(), true);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "app.messaging.rabbit", name = "enabled", havingValue = "true")
+    Binding authorizationResultBinding(
+            Queue authorizationResultQueue,
+            DirectExchange authorizationExchange,
+            RabbitProperties rabbitProperties
+    ) {
+        return BindingBuilder
+                .bind(authorizationResultQueue)
+                .to(authorizationExchange)
+                .with(rabbitProperties.authorizationResultRoutingKey());
+    }
+
 }
