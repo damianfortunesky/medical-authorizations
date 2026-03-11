@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RabbitProperties(
         boolean enabled,
         String exchange,
-        String authorizationCreatedRoutingKey
+        String authorizationCreatedRoutingKey,
+        String authorizationCreatedQueue
 ) {
 }
