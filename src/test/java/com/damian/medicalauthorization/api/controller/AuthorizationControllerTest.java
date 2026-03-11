@@ -15,11 +15,10 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,21 +36,32 @@ class AuthorizationControllerTest {
     @WithAnonymousUser
     void shouldCreateAuthorization() throws Exception {
         UUID id = UUID.randomUUID();
-        Authorization created = new Authorization(id, "MEM001", "PROV001", "PROC001", "RECEIVED", OffsetDateTime.now());
-        when(authorizationUseCase.create(any())).thenReturn(created);
+        Authorization created = new Authorization(
+                id,
+                "12345678900",
+                "MEM001",
+                "PLAN001",
+                "PRAC001",
+                "PENDING",
+                "corr-123",
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        when(authorizationUseCase.create(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(created);
 
-        mockMvc.perform(post("/api/v1/authorizations")
+        mockMvc.perform(post("/authorizations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "memberId": "MEM001",
-                                  "providerId": "PROV001",
-                                  "procedureCode": "PROC001"
+                                  "patientDocument": "12345678900",
+                                  "memberNumber": "MEM001",
+                                  "planCode": "PLAN001",
+                                  "practiceCode": "PRAC001"
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("Location"))
-                .andExpect(jsonPath("$.id").value(id.toString()));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.authorizationId").value(id.toString()))
+                .andExpect(jsonPath("$.status").value("PENDING"));
     }
 
     @Test
@@ -60,7 +70,7 @@ class AuthorizationControllerTest {
         UUID id = UUID.randomUUID();
         when(authorizationUseCase.findById(id)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/v1/authorizations/{id}", id))
+        mockMvc.perform(get("/authorizations/{id}", id))
                 .andExpect(status().isNotFound());
     }
 }

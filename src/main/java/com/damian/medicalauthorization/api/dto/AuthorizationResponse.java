@@ -5,10 +5,13 @@ import java.util.UUID;
 
 public record AuthorizationResponse(
         UUID id,
-        String memberId,
-        String providerId,
-        String procedureCode,
+        String patientDocument,
+        String memberNumber,
+        String planCode,
+        String practiceCode,
         String status,
-        OffsetDateTime createdAt
+        String correlationId,
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt
 ) {
 }

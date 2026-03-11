@@ -2,6 +2,7 @@ package com.damian.medicalauthorization.api.controller;
 
 import com.damian.medicalauthorization.api.dto.AuthorizationResponse;
 import com.damian.medicalauthorization.api.dto.CreateAuthorizationRequest;
+import com.damian.medicalauthorization.api.dto.CreateAuthorizationResponse;
 import com.damian.medicalauthorization.application.port.AuthorizationUseCase;
 import com.damian.medicalauthorization.domain.model.Authorization;
 import jakarta.validation.Valid;
@@ -13,13 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/authorizations")
+@RequestMapping("/authorizations")
 public class AuthorizationController {
 
     private final AuthorizationUseCase authorizationUseCase;
@@ -29,23 +28,21 @@ public class AuthorizationController {
     }
 
     @PostMapping
-    public ResponseEntity<AuthorizationResponse> createAuthorization(@Valid @RequestBody CreateAuthorizationRequest request) {
-        Authorization created = authorizationUseCase.create(new Authorization(
-                null,
-                request.memberId(),
-                request.providerId(),
-                request.procedureCode(),
-                null,
-                null
-        ));
+    public ResponseEntity<CreateAuthorizationResponse> createAuthorization(@Valid @RequestBody CreateAuthorizationRequest request) {
+        Authorization created = authorizationUseCase.create(
+                request.patientDocument(),
+                request.memberNumber(),
+                request.planCode(),
+                request.practiceCode(),
+                request.correlationId()
+        );
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(created.id())
-                .toUri();
-
-        return ResponseEntity.created(location).body(toResponse(created));
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new CreateAuthorizationResponse(
+                        created.id(),
+                        created.correlationId(),
+                        created.status()
+                ));
     }
 
     @GetMapping("/{id}")
@@ -59,11 +56,14 @@ public class AuthorizationController {
     private AuthorizationResponse toResponse(Authorization authorization) {
         return new AuthorizationResponse(
                 authorization.id(),
-                authorization.memberId(),
-                authorization.providerId(),
-                authorization.procedureCode(),
+                authorization.patientDocument(),
+                authorization.memberNumber(),
+                authorization.planCode(),
+                authorization.practiceCode(),
                 authorization.status(),
-                authorization.createdAt()
+                authorization.correlationId(),
+                authorization.createdAt(),
+                authorization.updatedAt()
         );
     }
 }
