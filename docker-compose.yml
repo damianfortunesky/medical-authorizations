@@ -11,7 +11,7 @@ services:
     environment:
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: dev
-      DB_URL: jdbc:sqlserver://host.docker.internal:1433;databaseName=medical_authorizations;encrypt=true;trustServerCertificate=true
+      DB_URL: jdbc:sqlserver://host.docker.internal:1433;databaseName=db_medical_authorizations;encrypt=true;trustServerCertificate=true
       DB_USERNAME: api_user_medauth
       DB_PASSWORD: ApiUserMedAuth123!
       RABBITMQ_HOST: rabbitmq
